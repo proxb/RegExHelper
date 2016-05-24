@@ -1,4 +1,4 @@
-﻿#Function Invoke-RegExHelper {
+﻿Function Invoke-RegExHelper {
     <#
         .SYNOPSIS
             Tool to help with writing Regular Expressions
@@ -42,7 +42,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <GroupBox Header = 'Input String' Grid.Row = '0'>      
-                        <TextBox x:Name="String_inpbx" Height = "30" /> 
+                        <TextBox x:Name="String_inpbx" Height = "30" AcceptsReturn="True"  /> 
                     </GroupBox>     
                     <GroupBox Header = 'Regular Expression String' Grid.Row = '1'>        
                         <TextBox x:Name="Regex_inpbx" Height = "30" />  
@@ -76,7 +76,7 @@
                         </Grid>      
                     </GroupBox> 
                     <GroupBox Header = 'Log Data' Grid.Row = '1'>        
-                        <RichTextBox x:Name="Log_tb2" IsUndoEnabled = 'False' VerticalScrollBarVisibility = 'Visible'/>
+                        <RichTextBox x:Name="Log_tb2" IsUndoEnabled = 'False' VerticalScrollBarVisibility = 'Auto'/>
                     </GroupBox> 
                     <GroupBox Header = 'Status' Grid.Row = '2'>        
                         <Label x:Name="Status_tb2"  Content = 'Found 0 matches'/>  
@@ -235,7 +235,7 @@
                         $Pointer = $Pointer.GetNextContextPosition([System.Windows.Documents.LogicalDirection]::Forward)  
                     }  
                     Write-Verbose "$($StopWatch.Elapsed)" -Verbose                                     
-                } 
+                }
                 Catch {$UIHash.Status_tb2.Content = ("Found {0} matches" -f 0)}
                 Finally {
                     $UIHash.Log_tb2.EndChange()
@@ -248,6 +248,7 @@
             }
         })
         #>
+
 
         $uihash.Highlight_btn.Add_Click({
             $StopWatch = New-Object System.Diagnostics.Stopwatch
@@ -266,8 +267,9 @@
                     $Paragraph = $uihash.Log_tb2.Document.Blocks
                     $UIHash.Log_tb2.Document.Blocks.Clear()
                     $Regex = New-Object System.Text.RegularExpressions.Regex -ArgumentList $uiHash.Regex_inpbx_tb2.text, $Script:Options
-                    $Pointer = $Document.ContentStart                                                                               
-                    While ($Pointer -ne $Null) {                        
+                    $Pointer = $Paragraph.ContentStart                                                                              
+                    
+                    While ($Pointer -ne $Null) {   
                         $Context = $Pointer.GetPointerContext([System.Windows.Documents.LogicalDirection]::Forward)
                         If ($Context -eq [System.Windows.Documents.TextPointerContext]::Text) {
                             $TextRun = $Pointer.GetTextInRun([System.Windows.Documents.LogicalDirection]::Forward)                            
@@ -279,9 +281,9 @@
                             $Pointer = $TextRange.End   
                             $i++                    
                         }
-                        $Pointer = $Pointer.GetNextContextPosition([System.Windows.Documents.LogicalDirection]::Forward)  
+                        $Pointer = $Pointer.GetNextContextPosition([System.Windows.Documents.LogicalDirection]::Forward) 
                     }  
-                    Write-Verbose "$($StopWatch.Elapsed)" -Verbose                                     
+                    Write-Verbose "$($StopWatch.Elapsed)" -Verbose     
                 } 
                 Catch {$UIHash.Status_tb2.Content = ("Found {0} matches" -f 0)}
                 Finally {
@@ -306,6 +308,6 @@
         })
 
         [void]$uiHash.Window.ShowDialog()
-#}
+}
 
 #New-Alias -Name RegEx -Value Invoke-RegExHelper
