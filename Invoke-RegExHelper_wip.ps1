@@ -1,4 +1,4 @@
-﻿Function Invoke-RegExHelper {
+Function Invoke-RegExHelper {
     <#
         .SYNOPSIS
             Tool to help with writing Regular Expressions
@@ -20,7 +20,7 @@
             -----------
             Launches the Regular Expression tool
     #>
-    $UIHash=@{}
+    $Global:UIHash=@{}
     #Build the GUI
     [xml]$xaml = @"
     <Window 
@@ -206,61 +206,39 @@
             }      
         })
 
-        <#
-        $UIHash.Regex_inpbx_tb2.Add_TextChanged({ 
-            $StopWatch = New-Object System.Diagnostics.Stopwatch
-            $DocumentRange = New-Object System.Windows.Documents.TextRange -ArgumentList $UIHash.Log_tb2.Document.ContentStart,$UIHash.Log_tb2.Document.ContentEnd
-            $DocumentRange.ClearAllProperties()
-            $Colors = 'Orange','Yellow'
-            $i=0
-            If ($UIHash.Regex_inpbx_tb2.Text.length -gt 0 -AND $UIHash.Log_tb2.Document.Blocks.Inlines.Text.length -gt 0) {   
-                [System.Text.RegularExpressions.RegexOptions]$Script:Options = 'None'
-                $UIHash.Log_tb2.BeginChange() 
-                Try {
-                    $Regex = New-Object System.Text.RegularExpressions.Regex -ArgumentList $uiHash.Regex_inpbx_tb2.text, $Script:Options
-                    $Pointer = $UIHash.Log_tb2.Document.ContentStart  
-                    $StopWatch.Start()                                                         
-                    While ($Pointer -ne $Null) {                        
-                        $Context = $Pointer.GetPointerContext([System.Windows.Documents.LogicalDirection]::Forward)
-                        If ($Context -eq [System.Windows.Documents.TextPointerContext]::Text) {
-                            $TextRun = $Pointer.GetTextInRun([System.Windows.Documents.LogicalDirection]::Forward)                            
-                            $Match = $Regex.Match($TextRun)
-                            $Start = $Pointer.GetPositionAtOffset(($Match.Index),([System.Windows.Documents.LogicalDirection]::Forward))
-                            $End = $Pointer.GetPositionAtOffset((($Match.Index+$Match.Length)),([System.Windows.Documents.LogicalDirection]::Backward))
-                            $TextRange = New-Object System.Windows.Documents.TextRange -ArgumentList $Start,$End
-                            $TextRange.ApplyPropertyValue([System.Windows.Documents.TextElement]::BackgroundProperty, $Colors[$i%2])
-                            $Pointer = $TextRange.End
-                            $i++                            
+        $uiHash.String_inpbx.Add_TextChanged({
+            Try {
+                If (($uiHash.Regex_inpbx.text.length -gt 0) -AND ($uiHash.String_inpbx.Text.length -gt 0)) {
+                    $Regex = New-Object System.Text.RegularExpressions.Regex -ArgumentList $uiHash.Regex_inpbx.text, $Script:Options
+
+                    If ($uiHash.String_inpbx.Text -match $Regex){
+                        $Script:observableCollection.Clear()
+                        ForEach ($Item in ($Matches.GetEnumerator())) {
+                            $Script:observableCollection.Add($Item)
                         }
-                        $Pointer = $Pointer.GetNextContextPosition([System.Windows.Documents.LogicalDirection]::Forward)  
-                    }  
-                    Write-Verbose "$($StopWatch.Elapsed)" -Verbose                                     
+                    } Else {
+                        $Script:observableCollection.Clear()
+                    }
+                } 
+                Else {
+                    $Script:observableCollection.Clear()
                 }
-                Catch {$UIHash.Status_tb2.Content = ("Found {0} matches" -f 0)}
-                Finally {
-                    $UIHash.Log_tb2.EndChange()
-                    $StopWatch.Stop()
-                }
-                $UIHash.Status_tb2.Content = ("Found {0} matches" -f $i)
-            } 
-            Else {
-                $UIHash.Status_tb2.Content = ("Found {0} matches" -f 0)
             }
+            Catch {
+                $Script:observableCollection.Clear()
+            }      
         })
-        #>
 
         $uihash.Highlight_btn.Add_Click({
             $StopWatch = New-Object System.Diagnostics.Stopwatch
             $DocumentRange = New-Object System.Windows.Documents.TextRange -ArgumentList $UIHash.Log_tb2.Document.ContentStart,$UIHash.Log_tb2.Document.ContentEnd
             $StopWatch.Start()
-            
             $DocumentRange.ClearAllProperties()
-            Write-Verbose "$($StopWatch.Elapsed)" -Verbose 
+            Write-Verbose "[CLEAR ALL PROPERTIES] $($StopWatch.Elapsed)" -Verbose 
             $StopWatch.Restart()
             $Colors = 'Orange','Yellow'
             $i=0
-            If ($UIHash.Regex_inpbx_tb2.Text.length -gt 0 -AND $UIHash.Log_tb2.Document.Blocks.Inlines.Text.length -gt 0) {   
-                [System.Text.RegularExpressions.RegexOptions]$Script:Options = 'None'                 
+            If ($UIHash.Regex_inpbx_tb2.Text.length -gt 0 -AND $UIHash.Log_tb2.Document.Blocks.Inlines.Text.length -gt 0) {                  
                 Try {
                     $UIHash.Log_tb2.BeginChange()
                     #$Paragraph = $uihash.Log_tb2.Document.Blocks
@@ -272,16 +250,18 @@
                         If ($Context -eq [System.Windows.Documents.TextPointerContext]::Text) {
                             $TextRun = $Pointer.GetTextInRun([System.Windows.Documents.LogicalDirection]::Forward)                            
                             $Match = $Regex.Match($TextRun)
-                            $Start = $Pointer.GetPositionAtOffset(($Match.Index),([System.Windows.Documents.LogicalDirection]::Forward))
-                            $End = $Pointer.GetPositionAtOffset((($Match.Index+$Match.Length)),([System.Windows.Documents.LogicalDirection]::Backward))
-                            $TextRange = New-Object System.Windows.Documents.TextRange -ArgumentList $Start,$End
-                            $TextRange.ApplyPropertyValue([System.Windows.Documents.TextElement]::BackgroundProperty, $Colors[$i%2])
-                            $Pointer = $TextRange.End   
-                            $i++                    
+                            If ($Match.Success) {
+                                $Start = $Pointer.GetPositionAtOffset(($Match.Index),([System.Windows.Documents.LogicalDirection]::Forward))
+                                $End = $Pointer.GetPositionAtOffset((($Match.Index+$Match.Length)),([System.Windows.Documents.LogicalDirection]::Backward))
+                                $TextRange = New-Object System.Windows.Documents.TextRange -ArgumentList $Start,$End
+                                $TextRange.ApplyPropertyValue([System.Windows.Documents.TextElement]::BackgroundProperty, $Colors[$i%2])
+                                $Pointer = $TextRange.End   
+                                $i++  
+                            }                  
                         }
                         $Pointer = $Pointer.GetNextContextPosition([System.Windows.Documents.LogicalDirection]::Forward) 
                     }  
-                    Write-Verbose "$($StopWatch.Elapsed)" -Verbose     
+                    Write-Verbose "[UPDATE PROPERTIES] $($StopWatch.Elapsed)" -Verbose     
                 } 
                 Catch {$UIHash.Status_tb2.Content = ("Found {0} matches" -f 0)}
                 Finally {
